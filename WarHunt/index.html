@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="nl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WarHunt</title>
+  <style>
+    #game {
+      position: relative;
+      width: 800px;
+      height: 400px;
+      margin-left: auto;
+      margin-right: auto;
+      border: 1px solid black;
+      background-image: url(img/background2.png);
+      background-size: cover;
+      overflow: hidden;
+      cursor: url("img/crosshair_3_100.png") 45 45, auto;
+    }
+
+    #grass {
+      width: 100%;
+      height: 100%;
+      display: inline;
+      position: absolute;
+      z-index: 1;
+    }
+
+    #mig {
+      position: absolute;
+      width: 120px;
+      height: 80px;
+      z-index: 2;
+      left: -200;
+    }
+
+    #tank {
+      display: inline;
+      z-index: 2;
+      position: absolute;
+      width: 185px;
+      height: 185px;
+      top: 250px;
+      left: -200px;
+    }
+
+    .myButton {
+      z-index: 4;
+      position: absolute;
+      left: 290px;
+      top: 190px;
+      box-shadow: 0px 1px 0px 0px #fff6af;
+      background: linear-gradient(to bottom, #ffec64 5%, #ffab23 100%);
+      background-color: #ffec64;
+      border-radius: 6px;
+      border: 1px solid #ffaa22;
+      display: inline-block;
+      cursor: pointer;
+      color: #333333;
+      font-family: Arial;
+      font-size: 15px;
+      font-weight: bold;
+      padding: 10px 70px;
+      text-decoration: none;
+      text-shadow: 0px 1px 0px #ffee66;
+    }
+
+    .myButton:hover {
+      background: linear-gradient(to bottom, #ffab23 5%, #ffec64 100%);
+      background-color: #ffab23;
+    }
+
+    .myButton:active {
+      position: absolute;
+      left: 290px;
+      top: 192px;
+    }
+    #stats {
+      width: 200px;
+      height: 40px;
+      position: absolute;
+      padding: 10px;
+      left: 675px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="game">
+    <img id="tank" src="img/tonk.png">
+    <img id="mig" src="img/mig21.png" onclick="mighit()">
+    <img id="grass" src="img/backgroundgrass.png" onclick="playGunshot()">
+    <div id="stats">
+      <div>Mig hit: <span id="hits">0</span></div>
+      <div>Mig missed: <span id="missed">0</span></div>
+    </div>
+    <div id="start-button" class="myButton" onclick="startGame();">START</div>
+  </div>
+
+  <script>
+    var tankLeft = -200;
+    var migLeft = -200;
+    var flyspeed = 15;
+    var migTop = 0;
+    var migInterval = null;
+    var fallInterval = null;
+    var hitCount = 0;
+    var missedCount = 0;
+
+    var migSound = new Audio("sounds/mig21.mp3");
+    var gunSound = new Audio("sounds/missile_launch_Sound_effect.mp3");
+    var migExplo = new Audio("sounds/Explo_sound_effect.mp3");
+    migSound.volume = 0.1,5;
+    gunSound.volume = 0.2;
+    var tank = document.getElementById("tank");
+    var mig = document.getElementById("mig");
+    var game = document.getElementById("game");
+    var startButton = document.getElementById("start-button");
+
+
+
+
+    function startGame() {
+      startButton.style.display = "none";
+      startTankDrive();
+      startMigFly()
+    }
+
+    function updateHitMissed() {
+      document.getElementById("hits").innerHTML = hitCount;
+      document.getElementById("missed").innerHTML = missedCount;
+    }
+
+
+    function mighit() {
+      hitCount ++;
+      updateHitMissed();
+      mig.src = "img/explosie-1.png";
+      clearInterval(migInterval);
+      flyspeed += 6;
+      var fallspeed = 3;
+      mig.style.zIndex = 1;
+      migSound.pause();
+      migExplo.play();
+
+
+      setTimeout(function() {
+        mig.src = "img/mig21-fly-down.png";
+
+        fallInterval = setInterval(() => {
+          migTop += fallspeed;
+          mig.style.top = migTop + "px";
+
+          fallspeed += 3;
+          //check of we moeten stoppen met vallen
+          if(migTop > 2000) {
+            clearInterval(fallInterval);
+            startMigFly();
+          }
+        }, 100);
+
+      }, 800)  
+
+    }
+
+    function startMigFly() {
+      migLeft = -200;
+      mig.style.zIndex = 3;
+      mig.src = "img/mig21.png";
+      mig.style.left = migLeft + "px";
+      migTop = Math.floor((Math.random() * 250) + 1);
+      mig.style.top = migTop + "px";
+
+      migInterval = setInterval(() => {
+        migLeft += flyspeed;
+        mig.style.left = migLeft + "px";
+
+        if (migLeft == 0 || migLeft % 150 == 0) {
+          migSound.play();
+        }
+        //als mig uit scherm vliegt
+        if (migLeft > game.offsetWidth) {
+          missedCount ++;
+          updateHitMissed();
+
+          // reset de mig left position
+          migLeft = -800;
+          mig.style.left = migLeft + "px";
+          //reset de mig top position
+          migTop = Math.floor((Math.random() * 250) + 1);
+          mig.style.top = migTop + "px";
+        }
+      }, 100);
+    }
+
+    function playGunshot() {
+      gunSound.currentTime = 0;
+      gunSound.play();
+    }
+
+
+    function startTankDrive() {
+      tank.style.left = tankLeft;
+      setInterval(() => {
+        tankLeft += 8;
+        tank.style.left = tankLeft + "px";
+
+        //checken of tank buitenbeeld is
+        if (tankLeft > game.offsetWidth) {
+          tankLeft = -320;
+        }
+      }, 125);
+    }
+
+
+  </script>
+</body>
+
+</html>
